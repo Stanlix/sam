@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 class DeployAppCommand extends Command
@@ -40,21 +41,28 @@ class DeployAppCommand extends Command
      */
     public function handle()
     {
-        $dir = env('DEPLOYMENT_DIR', 'storage/deployments') . './' . $this->argument('appname') . '/versions';
-        $repoUrl = $this->argument('repourl'); 
-        $this->exec("mkdir $dir -p; cd $dir");
-        $this->exec("cd $dir; git clone $repoUrl running");
-        $this->exec('cd $dir/running; composer install --no-dev');
-        $commitHash = $this->exec('git log -1 --pretty=format:"%h"');
-        $this->exec("cd $dir; mv running $commitHash");
-        $this->exec("cd $dir/..; ln -s ./storage/deployments/$commitHash active");
-        $this->exec("cd $dir/$commitHash; ln -s ../../.env .env");
+        try {
+            $appBaseDir = env('DEPLOYMENT_DIR', 'storage/deployments');
+            $dir = $appBaseDir . './' . $this->argument('appname') . '/versions';
+            $repoUrl = $this->argument('repourl'); 
+            $this->exec("mkdir $dir -p; cd $dir");
+            $this->exec("cd $dir; git clone $repoUrl running");
+            $this->exec('cd $dir/running; composer install --no-dev');
+            $commitHash = $this->exec('git log -1 --pretty=format:"%h"');
+            $this->exec("cd $dir; mv running $commitHash");
+            $this->exec("cd $dir/..; ln -fns ./storage/deployments/$commitHash active");
+            $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/.env .env");
+            $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/storage storage");
+        }
+        catch (ProcessFailedException $e) {
+            echo $e->getMessage();
+        }
     }
 
     protected function exec($cmd) 
     {
         $p = new Process($cmd);
-        $p->run();
+        $p->mustRun()();
         echo ($p->getOutput());
         return $p->getOutput();
     }
