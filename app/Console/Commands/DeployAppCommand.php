@@ -42,8 +42,8 @@ class DeployAppCommand extends Command
     public function handle()
     {
         try {
-            $appBaseDir = env('DEPLOYMENT_DIR', 'storage/deployments');
-            $dir = $appBaseDir . '/' . $this->argument('appname') . '/versions';
+            $appBaseDir = env('DEPLOYMENT_DIR', base_path('storage/deployments')) . '/' . $this->argument('appname');
+            $dir = $appBaseDir . '/versions';
             $repoUrl = $this->argument('repourl'); 
             $this->exec("mkdir $dir -p; cd $dir");
             if(file_exists("$dir/running")) {
@@ -57,9 +57,9 @@ class DeployAppCommand extends Command
                 $this->exec("rm $dir/$commitHash -rf");
             }
             $this->exec("cd $dir; mv running $commitHash");
-            $this->exec("cd $dir/..; ln -fns ./storage/deployments/$commitHash active");
-            if (file_exists("$appBaseDir/storage")) {
-                $this->exec("cd $dir/$commitHash; mv storage $appBaseDir/");
+            $this->exec("ln -fns $dir/$commitHash $appBaseDir/active");
+            if (!file_exists("$appBaseDir/storage")) {
+                $this->exec("mv $dir/$commitHash/storage $appBaseDir/");
             }
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/.env .env");
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/storage storage");
