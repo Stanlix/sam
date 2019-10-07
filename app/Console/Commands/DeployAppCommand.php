@@ -51,6 +51,9 @@ class DeployAppCommand extends Command
             $commitHash = $this->exec('git log -1 --pretty=format:"%h"');
             $this->exec("cd $dir; mv running $commitHash");
             $this->exec("cd $dir/..; ln -fns ./storage/deployments/$commitHash active");
+            if (directoryExists("$appBaseDir/storage")) {
+                $this->exec("cd $dir/$commitHash; mv storage $appBaseDir/");
+            }
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/.env .env");
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/storage storage");
         }
@@ -62,7 +65,7 @@ class DeployAppCommand extends Command
     protected function exec($cmd) 
     {
         $p = new Process($cmd);
-        $p->mustRun()();
+        $p->mustRun();
         echo ($p->getOutput());
         return $p->getOutput();
     }
