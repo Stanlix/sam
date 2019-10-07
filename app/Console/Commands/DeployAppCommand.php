@@ -40,7 +40,7 @@ class DeployAppCommand extends Command
      */
     public function handle()
     {
-        $dir = "storage/deployments/" . $this->argument('appname') . '/versions';
+        $dir = env('DEPLOYMENT_DIR', 'storage/deployments') . './' . $this->argument('appname') . '/versions';
         $repoUrl = $this->argument('repourl'); 
         $this->exec("mkdir $dir -p; cd $dir");
         $this->exec("cd $dir; git clone $repoUrl running");

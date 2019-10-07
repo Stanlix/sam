@@ -20,7 +20,7 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        DeploymentStarted => [
+        DeploymentStarted::class => [
             StartAppDeployment::class
         ]
     ];
