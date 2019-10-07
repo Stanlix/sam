@@ -12,7 +12,9 @@ class DeployAppCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'deploy';
+    protected $signature = 'deploy
+        {appname : Name of the application}
+        {repourl : Url of the repo to be deployed}';
 
     /**
      * The console command description.
@@ -38,19 +40,22 @@ class DeployAppCommand extends Command
      */
     public function handle()
     {
-        $dir = "~/deployments/kapax";
-        
-        $p = new Process("mkdir $dir -p; cd $dir; mkdir versions -p; cd versions;");
+        $dir = "storage/deployments/" . $this->argument('appname') . '/versions';
+        $repoUrl = $this->argument('repourl'); 
+        $this->exec("mkdir $dir -p; cd $dir");
+        $this->exec("cd $dir; git clone $repoUrl running");
+        $this->exec('cd $dir/running; composer install --no-dev');
+        $commitHash = $this->exec('git log -1 --pretty=format:"%h"');
+        $this->exec("cd $dir; mv running $commitHash");
+        $this->exec("cd $dir/..; ln -s ./storage/deployments/$commitHash active");
+        $this->exec("cd $dir/$commitHash; ln -s ../../.env .env");
+    }
+
+    protected function exec($cmd) 
+    {
+        $p = new Process($cmd);
         $p->run();
-        echo($p->getOutput());
-        
-        $p = new Process("git clone https://github.com/jrszapata/stanleys-url-shortener running; cd running");
-        $p->run();
-        echo($p->getOutput());
-        
-        $p = new Process("git log -1");
-        $p->run();
-        echo($p->getOutput());
-        
+        echo ($p->getOutput());
+        return $p->getOutput();
     }
 }
