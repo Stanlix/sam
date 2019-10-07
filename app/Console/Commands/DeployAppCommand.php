@@ -50,8 +50,8 @@ class DeployAppCommand extends Command
                 $this->exec("rm $dir/running -rf");
             }
             $this->exec("cd $dir; git clone $repoUrl running");
-            $this->exec('cd $dir/running; composer install --no-dev');
-            $commitHash = $this->exec('git log -1 --pretty=format:"%h"');
+            $this->exec("cd $dir/running; composer install --no-dev");
+            $commitHash = $this->exec('cd $dir/running; git log -1 --pretty=format:"%h"');
             
             if (file_exists("$dir/$commitHash")) {
                 $this->exec("rm $dir/$commitHash -rf");
