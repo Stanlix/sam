@@ -45,22 +45,30 @@ class DeployAppCommand extends Command
             $appBaseDir = env('DEPLOYMENT_DIR', base_path('storage/deployments')) . '/' . $this->argument('appname');
             $dir = $appBaseDir . '/versions';
             $repoUrl = $this->argument('repourl'); 
+            
             $this->exec("mkdir $dir -p; cd $dir");
+            
             if(file_exists("$dir/running")) {
                 $this->exec("rm $dir/running -rf");
             }
             $this->exec("cd $dir; git clone $repoUrl running");
-            $this->exec("cd $dir/running; composer install --no-dev");
-            $commitHash = $this->exec('cd $dir/running; git log -1 --pretty=format:"%h"');
             
+            $this->exec("cd $dir/running; composer install --no-dev");
+            
+            $commitHash = $this->exec("cd $dir/running; git log -1 --pretty=format:\"%h\"");
             if (file_exists("$dir/$commitHash")) {
                 $this->exec("rm $dir/$commitHash -rf");
             }
             $this->exec("cd $dir; mv running $commitHash");
+
             $this->exec("ln -fns $dir/$commitHash $appBaseDir/active");
+            
             if (!file_exists("$appBaseDir/storage")) {
                 $this->exec("mv $dir/$commitHash/storage $appBaseDir/");
+            } else {
+                $this->exec("rm -rf $dir/$commitHash/storage");
             }
+
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/.env .env");
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/storage storage");
         }
