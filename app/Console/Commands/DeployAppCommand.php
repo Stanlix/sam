@@ -15,7 +15,8 @@ class DeployAppCommand extends Command
      */
     protected $signature = 'deploy
         {appname : Name of the application}
-        {repourl : Url of the repo to be deployed}';
+        {repourl : Url of the repo to be deployed}
+        {--branch=master}';
 
     /**
      * The console command description.
@@ -44,14 +45,15 @@ class DeployAppCommand extends Command
         try {
             $appBaseDir = env('DEPLOYMENT_DIR', base_path('storage/deployments')) . '/' . $this->argument('appname');
             $dir = $appBaseDir . '/versions';
-            $repoUrl = $this->argument('repourl'); 
+            $repoUrl = $this->argument('repourl');
+            $branch = $this->option('branch');
             
             $this->exec("mkdir $dir -p; cd $dir");
             
-            if(file_exists("$dir/running")) {
+            if (file_exists("$dir/running")) {
                 $this->exec("rm $dir/running -rf");
             }
-            $this->exec("cd $dir; git clone $repoUrl running");
+            $this->exec("cd $dir; git clone -b $branch $repoUrl running");
             
             $this->exec("cd $dir/running; composer install --no-dev");
             
@@ -71,17 +73,16 @@ class DeployAppCommand extends Command
 
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/.env .env");
             $this->exec("cd $dir/$commitHash; ln -s $appBaseDir/storage storage");
-        }
-        catch (ProcessFailedException $e) {
+        } catch (ProcessFailedException $e) {
             echo $e->getMessage();
         }
     }
 
-    protected function exec($cmd) 
+    protected function exec($cmd)
     {
         $p = new Process($cmd);
         $p->mustRun();
-        echo ($p->getOutput());
+        echo($p->getOutput());
         return $p->getOutput();
     }
 }
